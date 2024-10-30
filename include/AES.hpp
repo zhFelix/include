@@ -32,17 +32,17 @@ class AES {
 		AES() {
 			init();
 		}
-		const char* sub(const char* str) {
-			string ans;
-			for(int i = 0;i<5;i++) {
+		vector<int> sub(const char* str) {
+			vector<int> ans;
+			for(int i = 0;i<128;i++) {
 				int l=str[i]>>4, r=str[i]&15;
-				ans.push_back(S_box[l][r]);
+				ans.push_back((int)S_box[l][r]);
 			}
-			return ans.c_str();
+			return ans;
 		}
-		const char* desub(const char* str) {
+		const char* desub(const vector<int> str) {
 			string ans;
-			for(int i = 0;i<5;i++) {
+			for(int i = 0;i<128;i++) {
 				for(int j = 0;j<16;j++) {
 					for(int k = 0;k<16;k++) {
 						if(str[i]==S_box[j][k]) {

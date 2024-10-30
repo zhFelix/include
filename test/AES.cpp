@@ -3,7 +3,15 @@
 using namespace std;
 int main() {
 	AES aes;
-	cout<<aes.desub(aes.sub("hello"));
+	char* n="hello";
+	int len=strlen(n);
+	const char* zero=char(128-len%128);
+	for(int i = 1;i<=zero;i++) {
+		strcat(n, zero);
+	}
+	vector<int> tmp=aes.sub(n);
+	auto ans=aes.desub(tmp);
+	cout<<ans;
 	return 0;
 }
 

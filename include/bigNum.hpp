@@ -4,7 +4,6 @@
 #include<stdexcept>
 #include<sstream> 
 using namespace std;
-template<typename _T>
 class bigNum {
 	private:
 		string s;
@@ -52,6 +51,7 @@ class bigNum {
 			s=b;
 			return *this;
 		}
+		template<typename _T>
 		bigNum& operator=(const _T& b) {
 			stringstream ss;
 			ss<<b;
@@ -114,8 +114,14 @@ class bigNum {
 			reverse(c.begin(), c.end());
 			return c;
 		}
+		template<typename _T>
 		bigNum operator+=(_T b) {
-			return *this+b;
+			*this=*this+b;
+			return *this;
+		}
+		bigNum operator+=(bigNum b) {
+			*this=*this+b;
+			return *this;
 		}
 		bigNum operator++() {
 			return *this+1;
