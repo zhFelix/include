@@ -4,7 +4,7 @@ using namespace std;
 class AES {
 	private:
 		char S_box[16][16]={{0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76}, 
-							{0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x73, 0xc0}, 
+							{0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0}, 
 							{0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15}, 
 							{0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, 0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75}, 
 							{0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, 0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84}, 
@@ -21,8 +21,8 @@ class AES {
 							{0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16}};
 		char key[32];
 		void init() {
-			random_device rd;
-			mt19937_64 mt(rd());
+			chrono::system_clock::time_point now = chrono::system_clock::now();
+			mt19937_64 mt(time_since_epoch);
 			uniform_int_distribution<> dist(0, 255);
 			for(int i = 0;i<32;i++) {
 				key[i]=dist(mt);
@@ -32,25 +32,40 @@ class AES {
 		AES() {
 			init();
 		}
-		vector<int> sub(const char* str) {
+		vector<int> ensub(const char* str) {
 			vector<int> ans;
-			for(int i = 0;i<128;i++) {
-				int l=str[i]>>4, r=str[i]&15;
-				ans.push_back((int)S_box[l][r]);
+			for(int i = 0;i<16;i++) {
+				int l=(str[i]>>4), r=str[i]&15;
+				ans.push_back((int)S_Box[l][r]);
 			}
 			return ans;
 		}
 		const char* desub(const vector<int> str) {
 			string ans;
-			for(int i = 0;i<128;i++) {
+			for(int i = 0;i<16;i++) {
 				for(int j = 0;j<16;j++) {
 					for(int k = 0;k<16;k++) {
-						if(str[i]==S_box[j][k]) {
-							ans.push_back(char(j<<4+k));
+						if(str[i]==S_Box[j][k]) {
+							ans.push_back((j<<4)+k);
 						}
 					}
 				}
 			}
 			return ans.c_str();
+		}
+		vector<int> code(const char* msg) {
+			string str(msg);
+			vector<int> ans;
+			int len=16-str.length()%16;
+			for(int i = 1;i<=len;i++) {
+				str.push_back(static_cast<char>(len));
+			}
+			for(int i = 0;i<str.length();i+=16) {
+				vector<int> tmp=ensub(str.substr(i, 16).c_str());
+				for(int j = 0;j<tmp.size();j++) {
+					ans.push_back(tmp[j]);
+				}
+			}
+			return ans;
 		}
 };

@@ -3,14 +3,11 @@
 using namespace std;
 int main() {
 	AES aes;
-	char* n="hello";
-	int len=strlen(n);
-	const char* zero=char(128-len%128);
-	for(int i = 1;i<=zero;i++) {
-		strcat(n, zero);
-	}
-	vector<int> tmp=aes.sub(n);
+	vector<int> tmp=aes.code("Hello World!");
 	auto ans=aes.desub(tmp);
+	for(auto i:tmp) {
+		cout<<i<<" ";
+	}
 	cout<<ans;
 	return 0;
 }
