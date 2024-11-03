@@ -9,9 +9,9 @@ int main() {
 	if(mode==0) {
 		string msg;
 		getline(cin, msg);
-		vector<int> tmp=aes.encode(msg.c_str());
-		for(int i = 0;i<tmp.size();i++) {
-			cout<<tmp[i]<<" ";
+		vector<int> ans=aes.encode(msg.c_str());
+		for(int i = 0;i<ans.size();i++) {
+			cout<<ans[i]<<" ";
 		}
 	} else {
 		vector<int> str;
@@ -19,7 +19,9 @@ int main() {
 		while(cin>>x) {
 			str.push_back(x);
 		}
-		cout<<aes.decode(str);
+		string ans=aes.decode(str);
+		cout<<ans;
 	}
 	return 0;
 }
+
