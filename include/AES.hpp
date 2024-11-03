@@ -2,6 +2,8 @@
 #include<random>
 #define vi vector<int>
 #define vvi vector<vi >
+#define mig multi_in_GL256
+#define enMC4x4 enMixColumns4x4
 using namespace std;
 class AES {
 	private:
@@ -21,6 +23,14 @@ class AES {
 									 {0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e}, 
 									 {0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf}, 
 									 {0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16}};
+		int enMixColumns4x4[4][4]={{0x02, 0x03, 0x01, 0x01}, 
+						  		   {0x01, 0x02, 0x03, 0x01}, 
+								   {0x01, 0x01, 0x02, 0x03}, 
+								   {0x03, 0x01, 0x01, 0x02}};
+		int deMixColumns4x4[4][4]={{0x0e, 0x0b, 0x0d, 0x09}, 
+								   {0x09, 0x0e, 0x0b, 0x0d}, 
+								   {0x0d, 0x09, 0x0e, 0x0b}, 
+								   {0x0b, 0x0d, 0x09, 0x0e}};
 		char key[32];
 		void gen_key() {
 			chrono::system_clock::time_point now = chrono::system_clock::now();
@@ -57,6 +67,20 @@ class AES {
 				}
 			}
 			return ans;
+		}
+		int multi_in_GL256(int a, int b) {
+			int res=0;
+			while(a&&b) {
+				if(b&1) {
+					res^=a;
+				}
+				a<<=1;
+				if(a&0x100) {
+					a^=0x11b;
+				}
+				b>>=1;
+			}
+			return res;
 		}
 	public:
 		AES() {
@@ -128,6 +152,26 @@ class AES {
 			ans[3][1]=tmp2;
 			ans[3][0]=tmp3;
 			return ans;
+		}
+		vvi enMixColumns(const vvi str) {
+			vvi ans(4, vi(4, 0));
+			ans[0][0]=mig(str[0][0], enMC4x4[0][0])^mig(str[0][0], enMC4x4[0][1])^mig(str[0][0], enMC4x4[0][2])^mig(str[0][0], enMC4x4[0][3]);
+			ans[0][1]=mig(str[0][1], enMC4x4[0][0])^mig(str[0][1], enMC4x4[0][1])^mig(str[0][1], enMC4x4[0][2])^mig(str[0][0], enMC4x4[0][3]);
+			ans[0][2]=mig(str[0][2], enMC4x4[0][0])^mig(str[0][2], enMC4x4[0][1])^mig(str[0][2], enMC4x4[0][2])^mig(str[0][0], enMC4x4[0][3]);
+			ans[0][3]=mig(str[0][3], enMC4x4[0][0])^mig(str[0][3], enMC4x4[0][1])^mig(str[0][3], enMC4x4[0][2])^mig(str[0][0], enMC4x4[0][3]);
+			ans[1][0]=mig(str[1][0], enMC4x4[1][0])^mig(str[1][0], enMC4x4[1][1])^mig(str[1][0], enMC4x4[1][2])^mig(str[1][0], enMC4x4[1][3]);
+			ans[1][1]=mig(str[1][1], enMC4x4[1][0])^mig(str[1][1], enMC4x4[1][1])^mig(str[1][1], enMC4x4[1][2])^mig(str[1][0], enMC4x4[1][3]);
+			ans[1][2]=mig(str[1][2], enMC4x4[1][0])^mig(str[1][2], enMC4x4[1][1])^mig(str[1][2], enMC4x4[1][2])^mig(str[1][0], enMC4x4[1][3]);
+			ans[1][3]=mig(str[1][3], enMC4x4[1][0])^mig(str[1][3], enMC4x4[1][1])^mig(str[1][3], enMC4x4[1][2])^mig(str[1][0], enMC4x4[1][3]);
+			ans[2][0]=mig(str[2][0], enMC4x4[2][0])^mig(str[2][0], enMC4x4[2][1])^mig(str[2][0], enMC4x4[2][2])^mig(str[2][0], enMC4x4[2][3]);
+			ans[2][1]=mig(str[2][1], enMC4x4[2][0])^mig(str[2][1], enMC4x4[2][1])^mig(str[2][1], enMC4x4[2][2])^mig(str[2][0], enMC4x4[2][3]);
+			ans[2][2]=mig(str[2][2], enMC4x4[2][0])^mig(str[2][2], enMC4x4[2][1])^mig(str[2][2], enMC4x4[2][2])^mig(str[2][0], enMC4x4[2][3]);
+			ans[2][3]=mig(str[2][3], enMC4x4[2][0])^mig(str[2][3], enMC4x4[2][1])^mig(str[2][3], enMC4x4[2][2])^mig(str[2][0], enMC4x4[2][3]);
+			ans[3][0]=mig(str[3][0], enMC4x4[3][0])^mig(str[3][0], enMC4x4[3][1])^mig(str[3][0], enMC4x4[3][2])^mig(str[3][0], enMC4x4[3][3]);
+			ans[3][1]=mig(str[3][1], enMC4x4[3][0])^mig(str[3][1], enMC4x4[3][1])^mig(str[3][1], enMC4x4[3][2])^mig(str[3][0], enMC4x4[3][3]);
+			ans[3][2]=mig(str[3][2], enMC4x4[3][0])^mig(str[3][2], enMC4x4[3][1])^mig(str[3][2], enMC4x4[3][2])^mig(str[3][0], enMC4x4[3][3]);
+			ans[3][3]=mig(str[3][3], enMC4x4[3][0])^mig(str[3][3], enMC4x4[3][1])^mig(str[3][3], enMC4x4[3][2])^mig(str[3][0], enMC4x4[3][3]);
+			
 		}
 		vi encode(const char* msg) {
 			string str(msg);
