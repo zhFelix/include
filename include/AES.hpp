@@ -4,6 +4,7 @@
 #define vvi vector<vi >
 #define mig multi_in_GL256
 #define enMC4x4 enMixColumns4x4
+#define deMC4x4 deMixColumns4x4
 using namespace std;
 class AES {
 	private:
@@ -70,7 +71,7 @@ class AES {
 		}
 		int multi_in_GL256(int a, int b) {
 			int res=0;
-			while(a&&b) {
+			while(b>0) {
 				if(b&1) {
 					res^=a;
 				}
@@ -81,6 +82,16 @@ class AES {
 				b>>=1;
 			}
 			return res;
+		}
+		int inv_gf(int a) {
+			int p=255, x=a, ans=1;
+			while(x) {
+				if(x&1) {
+					ans^=p;
+				}
+				p>>=1, x>>=1, ans>>=1;
+			}
+			return ans;
 		}
 	public:
 		AES() {
@@ -171,8 +182,28 @@ class AES {
 			ans[3][1]=mig(str[3][1], enMC4x4[3][0])^mig(str[3][1], enMC4x4[3][1])^mig(str[3][1], enMC4x4[3][2])^mig(str[3][0], enMC4x4[3][3]);
 			ans[3][2]=mig(str[3][2], enMC4x4[3][0])^mig(str[3][2], enMC4x4[3][1])^mig(str[3][2], enMC4x4[3][2])^mig(str[3][0], enMC4x4[3][3]);
 			ans[3][3]=mig(str[3][3], enMC4x4[3][0])^mig(str[3][3], enMC4x4[3][1])^mig(str[3][3], enMC4x4[3][2])^mig(str[3][0], enMC4x4[3][3]);
-			
+			return ans;
 		}
+		vvi deMixColumns(const vvi str) {
+			vvi ans(4, vi(4, 0));
+			ans[0][0]=mig(str[0][0], inv_gf(deMC4x4[0][0]))^mig(str[0][0], inv_gf(deMC4x4[0][1]))^mig(str[0][0], inv_gf(deMC4x4[0][2]))^mig(str[0][0], inv_gf(deMC4x4[0][3]));
+			ans[0][1]=mig(str[0][1], inv_gf(deMC4x4[0][0]))^mig(str[0][1], inv_gf(deMC4x4[0][1]))^mig(str[0][1], inv_gf(deMC4x4[0][2]))^mig(str[0][0], inv_gf(deMC4x4[0][3]));
+			ans[0][2]=mig(str[0][2], inv_gf(deMC4x4[0][0]))^mig(str[0][2], inv_gf(deMC4x4[0][1]))^mig(str[0][2], inv_gf(deMC4x4[0][2]))^mig(str[0][0], inv_gf(deMC4x4[0][3]));
+			ans[0][3]=mig(str[0][3], inv_gf(deMC4x4[0][0]))^mig(str[0][3], inv_gf(deMC4x4[0][1]))^mig(str[0][3], inv_gf(deMC4x4[0][2]))^mig(str[0][0], inv_gf(deMC4x4[0][3]));
+			ans[1][0]=mig(str[1][0], inv_gf(deMC4x4[1][0]))^mig(str[1][0], inv_gf(deMC4x4[1][1]))^mig(str[1][0], inv_gf(deMC4x4[1][2]))^mig(str[1][0], inv_gf(deMC4x4[1][3]));
+			ans[1][1]=mig(str[1][1], inv_gf(deMC4x4[1][0]))^mig(str[1][1], inv_gf(deMC4x4[1][1]))^mig(str[1][1], inv_gf(deMC4x4[1][2]))^mig(str[1][0], inv_gf(deMC4x4[1][3]));
+			ans[1][2]=mig(str[1][2], inv_gf(deMC4x4[1][0]))^mig(str[1][2], inv_gf(deMC4x4[1][1]))^mig(str[1][2], inv_gf(deMC4x4[1][2]))^mig(str[1][0], inv_gf(deMC4x4[1][3]));
+			ans[1][3]=mig(str[1][3], inv_gf(deMC4x4[1][0]))^mig(str[1][3], inv_gf(deMC4x4[1][1]))^mig(str[1][3], inv_gf(deMC4x4[1][2]))^mig(str[1][0], inv_gf(deMC4x4[1][3]));
+			ans[2][0]=mig(str[2][0], inv_gf(deMC4x4[2][0]))^mig(str[2][0], inv_gf(deMC4x4[2][1]))^mig(str[2][0], inv_gf(deMC4x4[2][2]))^mig(str[2][0], inv_gf(deMC4x4[2][3]));
+			ans[2][1]=mig(str[2][1], inv_gf(deMC4x4[2][0]))^mig(str[2][1], inv_gf(deMC4x4[2][1]))^mig(str[2][1], inv_gf(deMC4x4[2][2]))^mig(str[2][0], inv_gf(deMC4x4[2][3]));
+			ans[2][2]=mig(str[2][2], inv_gf(deMC4x4[2][0]))^mig(str[2][2], inv_gf(deMC4x4[2][1]))^mig(str[2][2], inv_gf(deMC4x4[2][2]))^mig(str[2][0], inv_gf(deMC4x4[2][3]));
+			ans[2][3]=mig(str[2][3], inv_gf(deMC4x4[2][0]))^mig(str[2][3], inv_gf(deMC4x4[2][1]))^mig(str[2][3], inv_gf(deMC4x4[2][2]))^mig(str[2][0], inv_gf(deMC4x4[2][3]));
+			ans[3][0]=mig(str[3][0], inv_gf(deMC4x4[3][0]))^mig(str[3][0], inv_gf(deMC4x4[3][1]))^mig(str[3][0], inv_gf(deMC4x4[3][2]))^mig(str[3][0], inv_gf(deMC4x4[3][3]));
+			ans[3][1]=mig(str[3][1], inv_gf(deMC4x4[3][0]))^mig(str[3][1], inv_gf(deMC4x4[3][1]))^mig(str[3][1], inv_gf(deMC4x4[3][2]))^mig(str[3][0], inv_gf(deMC4x4[3][3]));
+			ans[3][2]=mig(str[3][2], inv_gf(deMC4x4[3][0]))^mig(str[3][2], inv_gf(deMC4x4[3][1]))^mig(str[3][2], inv_gf(deMC4x4[3][2]))^mig(str[3][0], inv_gf(deMC4x4[3][3]));
+			ans[3][3]=mig(str[3][3], inv_gf(deMC4x4[3][0]))^mig(str[3][3], inv_gf(deMC4x4[3][1]))^mig(str[3][3], inv_gf(deMC4x4[3][2]))^mig(str[3][0], inv_gf(deMC4x4[3][3]));
+			return ans;
+		}	
 		vi encode(const char* msg) {
 			string str(msg);
 			vi ans;
@@ -184,6 +215,7 @@ class AES {
 				vvi tmp=char_to_piece(str.substr(i, 16).c_str());
 				tmp=enSubBytes(tmp);
 				tmp=enShiftRows(tmp);
+				tmp=enMixColumns(tmp);
 				vi str=piece_to_vector(tmp);
 				for(int j = 0;j<16;j++) {
 					ans.push_back(str[j]);
@@ -200,6 +232,7 @@ class AES {
 						tmp[j][k]=msg[j*4+k+i];
 					}
 				}
+				tmp=deMixColumns(tmp);
 				tmp=deShiftRows(tmp);
 				tmp=deSubBytes(tmp);
 				const char* t=piece_to_char(tmp);
