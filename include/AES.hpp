@@ -263,6 +263,8 @@ class AES {
 			return ans;
 		}	
 		string encode(const char* msg) {
+			// 每次加密重新生成随机密钥
+			gen_key();
 			string str(msg);
 			vi raw;
 			int len=16-str.length()%16;
@@ -271,16 +273,13 @@ class AES {
 			}
 			for(int i = 0;i<str.length();i+=16) {
 				vvi state=char_to_piece(str.substr(i, 16).c_str());
-				// 初始轮: AddRoundKey
 				state=add_round_key(state, 0);
-				// 第1~13轮: SubBytes -> ShiftRows -> MixColumns -> AddRoundKey
 				for(int r=1;r<=13;r++) {
 					state=enSubBytes(state);
 					state=enShiftRows(state);
 					state=enMixColumns(state);
 					state=add_round_key(state, r);
 				}
-				// 第14轮: SubBytes -> ShiftRows -> AddRoundKey (无 MixColumns)
 				state=enSubBytes(state);
 				state=enShiftRows(state);
 				state=add_round_key(state, 14);
@@ -289,10 +288,29 @@ class AES {
 					raw.push_back(v[j]);
 				}
 			}
-			return base64_encode(raw);
+			// 密钥(32字节)拼在密文前，整体 Base64
+			vi combined;
+			for(int i=0;i<32;i++) combined.push_back(key[i]);
+			for(int x:raw) combined.push_back(x);
+			return base64_encode(combined);
 		}
 		string decode(const string& b64) {
-			vi msg=base64_decode(b64);
+			vi all=base64_decode(b64);
+			// 前32字节是密钥
+			unsigned char saved_key[32];
+			for(int i=0;i<32;i++) saved_key[i]=static_cast<unsigned char>(all[i]);
+			// 用提取的密钥重新初始化
+			AES tmp_aes(saved_key);
+			// 用它的轮密钥来解密
+			for(int i=0;i<32;i++) key[i]=saved_key[i];
+			for(int r=0;r<15;r++) {
+				for(int j=0;j<16;j++) {
+					roundKeys[r][j]=tmp_aes.roundKeys[r][j];
+				}
+			}
+			// 剩余部分是密文
+			vi msg;
+			for(int i=32;i<(int)all.size();i++) msg.push_back(all[i]);
 			string ans;
 			for(int i = 0;i<msg.size();i+=16) {
 				vvi state(4, vi(4, 0));
@@ -301,18 +319,15 @@ class AES {
 						state[j][k]=msg[j*4+k+i];
 					}
 				}
-				// 解第14轮: AddRoundKey(14) -> InvShiftRows -> InvSubBytes (无 InvMixColumns)
 				state=add_round_key(state, 14);
 				state=deShiftRows(state);
 				state=deSubBytes(state);
-				// 解第13~1轮: AddRoundKey(r) -> InvMixColumns -> InvShiftRows -> InvSubBytes
 				for(int r=13;r>=1;r--) {
 					state=add_round_key(state, r);
 					state=deMixColumns(state);
 					state=deShiftRows(state);
 					state=deSubBytes(state);
 				}
-				// 解第0轮: AddRoundKey(0)
 				state=add_round_key(state, 0);
 				string str=piece_to_str(state);
 				ans+=str;
