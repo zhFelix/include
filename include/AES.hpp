@@ -1,4 +1,5 @@
-#include<bits/stdc++.h>
+#include<iostream>
+#include<cstdio>
 #include<random>
 using namespace std;
 class AES {
@@ -35,7 +36,7 @@ class AES {
 		const char* sub(const char* str) {
 			string ans;
 			for(int i = 0;i<5;i++) {
-				int l=str[i]>>4, r=str[i]&15;
+				int l=int(str[i])>>4, r=int(str[i])&15;
 				ans.push_back(S_box[l][r]);
 			}
 			return ans.c_str();
