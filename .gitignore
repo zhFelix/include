@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+# Build artifacts
+sha256_test
+test/SHA_256
+*.dSYM/
