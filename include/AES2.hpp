@@ -337,6 +337,12 @@ public:
 		gen_key();
 	}
 	AES(const unsigned char* user_key) {
+		set_key(user_key);
+	}
+
+	// ========== 密钥设置 ==========
+	// set_key: 手动设置32字节密钥，重新计算轮密钥
+	void set_key(const unsigned char* user_key) {
 		for(int i = 0; i < 32; i++) {
 			key[i] = user_key[i];
 		}
@@ -344,6 +350,7 @@ public:
 	}
 
 	// ========== 密钥导出 ==========
+	// get_key_str: 返回当前密钥字符串（32字节）
 	string get_key_str() {
 		string ans;
 		for(int i = 0; i < 32; i++) {
@@ -352,16 +359,9 @@ public:
 		return ans;
 	}
 
-	static unsigned char* key_str_to_bytes(const string& s) {
-		unsigned char* k = new unsigned char[32];
-		for(int i = 0; i < 32; i++) k[i] = static_cast<unsigned char>(s[i]);
-		return k;
-	}
-
 	// ========== 加密 ==========
-	// encode: 随机生成密钥 → AES-256加密 → 密钥(32B)+密文 → Base64
+	// encode: 使用当前密钥AES-256加密 → Base64输出（只含密文）
 	string encode(const char* msg) {
-		gen_key();
 		string str(msg);
 		vi raw;
 		int len = 16 - str.length() % 16;
@@ -370,44 +370,26 @@ public:
 		}
 		for(int i = 0; i < (int)str.length(); i += 16) {
 			vvi state = char_to_piece(str.substr(i, 16).c_str());
-			// 第0轮: AddRoundKey
 			state = add_round_key(state, 0);
-			// 第1~13轮: SubBytes → ShiftRows → MixColumns → AddRoundKey
 			for(int r = 1; r <= 13; r++) {
 				state = enSubBytes(state);
 				state = enShiftRows(state);
 				state = enMixColumns(state);
 				state = add_round_key(state, r);
 			}
-			// 第14轮: SubBytes → ShiftRows → AddRoundKey (无MixColumns)
 			state = enSubBytes(state);
 			state = enShiftRows(state);
 			state = add_round_key(state, 14);
 			vi v = piece_to_vector(state);
 			for(int j = 0; j < 16; j++) raw.push_back(v[j]);
 		}
-		vi combined;
-		for(int i = 0; i < 32; i++) combined.push_back(key[i]);
-		for(int x : raw) combined.push_back(x);
-		return base64_encode(combined);
+		return base64_encode(raw);
 	}
 
 	// ========== 解密 ==========
-	// decode: Base64解码 → 提取前32B密钥 → 解密剩余密文 → 去填充
+	// decode: Base64解码 → 使用当前密钥解密 → 去填充
 	string decode(const string& b64) {
-		vi all = base64_decode(b64);
-		unsigned char saved_key[32];
-		for(int i = 0; i < 32; i++) saved_key[i] = static_cast<unsigned char>(all[i]);
-		// 用提取的密钥重新初始化
-		AES tmp_aes(saved_key);
-		for(int i = 0; i < 32; i++) key[i] = saved_key[i];
-		for(int r = 0; r < 15; r++) {
-			for(int j = 0; j < 16; j++) {
-				roundKeys[r][j] = tmp_aes.roundKeys[r][j];
-			}
-		}
-		vi msg;
-		for(int i = 32; i < (int)all.size(); i++) msg.push_back(all[i]);
+		vi msg = base64_decode(b64);
 		string ans;
 		for(int i = 0; i < (int)msg.size(); i += 16) {
 			vvi state(4, vi(4, 0));
@@ -416,18 +398,15 @@ public:
 					state[j][k] = msg[j * 4 + k + i];
 				}
 			}
-			// 第14轮: AddRoundKey(14) → InvShiftRows → InvSubBytes
 			state = add_round_key(state, 14);
 			state = deShiftRows(state);
 			state = deSubBytes(state);
-			// 第13~1轮: AddRoundKey → InvMixColumns → InvShiftRows → InvSubBytes
 			for(int r = 13; r >= 1; r--) {
 				state = add_round_key(state, r);
 				state = deMixColumns(state);
 				state = deShiftRows(state);
 				state = deSubBytes(state);
 			}
-			// 第0轮: AddRoundKey(0)
 			state = add_round_key(state, 0);
 			string str = piece_to_str(state);
 			ans += str;
