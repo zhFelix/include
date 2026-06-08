@@ -2,6 +2,7 @@
 #include<vector>
 #include<string>
 #include<random>
+#include<utility>
 #define vi vector<int>
 #define vvi vector<vi >
 #define mig multi_in_GF256
@@ -159,7 +160,6 @@ private:
 	}
 
 	// ========== 加密核心步骤 ==========
-	// SubBytes: 每个字节查S_Box
 	vvi enSubBytes(const vvi str) {
 		vvi ans(4, vi(4, 0));
 		for(int i = 0; i < 4; i++) {
@@ -172,23 +172,19 @@ private:
 		return ans;
 	}
 
-	// ShiftRows: 行循环左移（第0行0格, 第1行1格, 第2行2格, 第3行3格）
 	vvi enShiftRows(const vvi str) {
 		vvi ans = str;
-		// 第1行: 左移1格
 		int tmp1 = ans[1][0];
 		ans[1][0] = ans[1][1];
 		ans[1][1] = ans[1][2];
 		ans[1][2] = ans[1][3];
 		ans[1][3] = tmp1;
-		// 第2行: 左移2格
 		tmp1 = ans[2][0];
 		int tmp2 = ans[2][1];
 		ans[2][0] = ans[2][2];
 		ans[2][1] = ans[2][3];
 		ans[2][2] = tmp1;
 		ans[2][3] = tmp2;
-		// 第3行: 左移3格
 		tmp1 = ans[3][0], tmp2 = ans[3][1];
 		int tmp3 = ans[3][2];
 		ans[3][0] = ans[3][3];
@@ -198,7 +194,6 @@ private:
 		return ans;
 	}
 
-	// MixColumns: 每列与固定矩阵相乘（GF(2^8)）
 	vvi enMixColumns(const vvi str) {
 		vvi ans(4, vi(4, 0));
 		for(int c = 0; c < 4; c++) {
@@ -214,7 +209,6 @@ private:
 		return ans;
 	}
 
-	// AddRoundKey: state[行][列] 与 roundKey[列*4+行] 异或
 	vvi add_round_key(const vvi state, int round) {
 		vvi ans = state;
 		for(int i = 0; i < 4; i++) {
@@ -226,7 +220,6 @@ private:
 	}
 
 	// ========== 解密核心步骤 ==========
-	// InvSubBytes: 暴力查找S_Box恢复原始值
 	vvi deSubBytes(const vvi str) {
 		vvi ans(4, vi(4, 0));
 		for(int i = 0; i < 4; i++) {
@@ -243,23 +236,19 @@ private:
 		return ans;
 	}
 
-	// InvShiftRows: 行循环右移（与加密反向）
 	vvi deShiftRows(const vvi str) {
 		vvi ans = str;
-		// 第1行: 右移1格
 		int tmp1 = ans[1][3];
 		ans[1][3] = ans[1][2];
 		ans[1][2] = ans[1][1];
 		ans[1][1] = ans[1][0];
 		ans[1][0] = tmp1;
-		// 第2行: 右移2格
 		tmp1 = ans[2][3];
 		int tmp2 = ans[2][2];
 		ans[2][3] = ans[2][1];
 		ans[2][2] = ans[2][0];
 		ans[2][1] = tmp1;
 		ans[2][0] = tmp2;
-		// 第3行: 右移3格
 		tmp1 = ans[3][3], tmp2 = ans[3][2];
 		int tmp3 = ans[3][1];
 		ans[3][3] = ans[3][0];
@@ -269,7 +258,6 @@ private:
 		return ans;
 	}
 
-	// InvMixColumns: 每列与逆矩阵相乘
 	vvi deMixColumns(const vvi str) {
 		vvi ans(4, vi(4, 0));
 		for(int c = 0; c < 4; c++) {
@@ -285,6 +273,7 @@ private:
 		return ans;
 	}
 
+public:
 	// ========== 静态工具函数 ==========
 	static string base64_encode(const vi& data) {
 		const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -341,7 +330,6 @@ public:
 	}
 
 	// ========== 密钥设置 ==========
-	// set_key: 手动设置32字节密钥，重新计算轮密钥
 	void set_key(const unsigned char* user_key) {
 		for(int i = 0; i < 32; i++) {
 			key[i] = user_key[i];
@@ -350,7 +338,6 @@ public:
 	}
 
 	// ========== 密钥导出 ==========
-	// get_key_str: 返回当前密钥字符串（32字节）
 	string get_key_str() {
 		string ans;
 		for(int i = 0; i < 32; i++) {
@@ -358,10 +345,25 @@ public:
 		}
 		return ans;
 	}
+	// 返回密钥的 Base64 编码
+	string get_key_b64() {
+		vi k;
+		for(int i = 0; i < 32; i++) k.push_back(key[i]);
+		return base64_encode(k);
+	}
 
 	// ========== 加密 ==========
-	// encode: 使用当前密钥AES-256加密 → Base64输出（只含密文）
-	string encode(const char* msg) {
+	// encode: 使用当前密钥加密 → 返回 {密文(Base64), 密钥(Base64)}
+	// 若 key_b64 为空则自动生成新密钥，否则使用指定密钥
+	pair<string, string> encode(const char* msg, const string& key_b64 = "") {
+		if(key_b64 != "") {
+			vi k = base64_decode(key_b64);
+			unsigned char k_arr[32];
+			for(int i = 0; i < 32; i++) k_arr[i] = static_cast<unsigned char>(k[i]);
+			set_key(k_arr);
+		} else {
+			gen_key();
+		}
 		string str(msg);
 		vi raw;
 		int len = 16 - str.length() % 16;
@@ -383,12 +385,22 @@ public:
 			vi v = piece_to_vector(state);
 			for(int j = 0; j < 16; j++) raw.push_back(v[j]);
 		}
-		return base64_encode(raw);
+		return {base64_encode(raw), get_key_b64()};
 	}
 
 	// ========== 解密 ==========
-	// decode: Base64解码 → 使用当前密钥解密 → 去填充
+	// decode(b64): 使用当前密钥解密
 	string decode(const string& b64) {
+		return decode(b64, "");
+	}
+	// decode(b64, key_b64): 使用指定密钥(Base64)解密
+	string decode(const string& b64, const string& key_b64) {
+		if(key_b64 != "") {
+			vi k = base64_decode(key_b64);
+			unsigned char k_arr[32];
+			for(int i = 0; i < 32; i++) k_arr[i] = static_cast<unsigned char>(k[i]);
+			set_key(k_arr);
+		}
 		vi msg = base64_decode(b64);
 		string ans;
 		for(int i = 0; i < (int)msg.size(); i += 16) {
