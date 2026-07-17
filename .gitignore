@@ -35,3 +35,8 @@
 sha256_test
 test/SHA_256
 *.dSYM/
+example/
+test/AES
+test/SM4_test
+test/SM4_test2
+test/bigNum
